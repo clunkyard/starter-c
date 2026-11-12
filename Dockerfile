@@ -7,5 +7,5 @@ COPY --from=node /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 WORKDIR /workspace
 COPY . .
-ENTRYPOINT ["npx", "--yes", "@clunkyard/cli@2"]
+ENTRYPOINT ["npx", "--yes", "@clunkyard/cli"]
 CMD ["match"]
