@@ -59,6 +59,12 @@ static void drive(cy_robot *robot,double throttle,double turn,double pitch) {
 static void scan(cy_robot *robot,double heading,double arc,double pitch) {
   cy_scanner_heading(robot,heading);cy_scanner_arc(robot,arc);cy_scanner_pitch(robot,pitch);
 }
+/* The arena's calibration kernel, xorshift-sqrt v1; safe to delete with its call below. */
+static double calibration_work(uint64_t work,uint64_t tick) {
+  uint64_t x=UINT64_C(88172645463325252)^tick;double sum=0;
+  for(uint64_t i=0;i<work;i++){x^=x<<13;x^=x>>7;x^=x<<17;sum+=sqrt((double)(x>>11));}
+  return (double)(((uint64_t)floor(sum)+(x>>40))%1000000);
+}
 static void turn(cy_robot *robot) {
   cy_vec3 position={0},gravity={0};cy_contact target={0};cy_cue cue={0};cy_scan last={0};
   cy_me_position(robot,&position);cy_arena_gravity(robot,&gravity);cy_scanner_last(robot,&last);
@@ -103,6 +109,10 @@ static void turn(cy_robot *robot) {
     cy_angles_angle_diff(bearing,heading,&delta);cy_angles_clamp(delta/30,-1,1,&turn_control);cy_angles_clamp((climb-pitch)/30,-1,1,&pitch_control);
     drive(robot,0.8,turn_control,pitch_control);
   }
+  /* clunkyard calibration begin */
+  double work=0;const char path[]="state.calibration.work";
+  if(cy_raw_number(robot,path,sizeof path-1,&work)==CY_OK&&work>=1){cy_status_text(robot,"WORK",4);cy_status_value(robot,calibration_work((uint64_t)work,(uint64_t)tick));}
+  /* clunkyard calibration end */
 }
 int main(void) {
   cy_robot *robot=0;if(cy_open(CY_API_MAJOR,CY_API_MINOR,"clunkyard-c",11,CY_API_VERSION,sizeof CY_API_VERSION-1,&robot)<0)return 1;
