@@ -14,6 +14,10 @@ npx @clunkyard/cli replay
 
 If you use Make, the equivalent commands are `make doctor`, `make`, `make match` and `make replay`. The CLI downloads the local match engine and your language's SDK. Downloads and build output stay in `.clunkyard/`.
 
+This robot builds to WebAssembly (wasm32-wasip1), as the hosted builder does, and runs on the Wasmtime host metered by fuel, which counts the same on every computer. In Season 3 its fuel tier is 1 (rates/s3.json); a local match uses the same fuel budget as Standard. Install wasi-sdk 33 and set WASI_SDK_PATH to it, or provide Clang 22 with wasm-ld and set WASI_SYSROOT to a wasi-sdk 33 sysroot.
+
+Set "target": "native" in bot.json to build with your C compiler instead. A native build plays Open only: Standard refuses it. Other platforms build natively until their SDK carries the WebAssembly host.
+
 The [language guide](https://clunkyard.com/sdk/c) covers the robot API and your toolchain. Use `doctor` to check your installation.
 
 ## Repeat a trial
