@@ -7,7 +7,8 @@
  * clock: tick seconds remaining_ticks
  * arena: size gravity terrain_kind ground_height(x y)
  * me: health position velocity heading pitch roll angular_velocity
- *   attitude grounded altitude applied
+ *   attitude grounded altitude applied hull_mounts to_mount(heading pitch)
+ *   from_mount(heading pitch) mount_toward(point)
  * battery: charge capacity regen sustainable_drive compute
  *   drive_cost(fraction)
  * drive: hover_lift
@@ -29,7 +30,8 @@
  * score: me best armour
  * angles: normalize(degrees) angle_diff(target current)
  *   bearing_to(from to) elevation_to(from to) direction(heading pitch)
- *   distance(a b) clamp(value low high)
+ *   distance(a b) to_chassis(heading pitch attitude)
+ *   from_chassis(heading pitch attitude) clamp(value low high)
  * raw: number(path) text(path) has(path) flag(path) count(path) line()
  * Controls: drive.set(throttle turn pitch_turn)
  *   drive.forces(thrust strafe lift yaw_torque pitch_torque roll_torque brake)
@@ -59,6 +61,7 @@ static void drive(cy_robot *robot,double throttle,double turn,double pitch) {
 static void scan(cy_robot *robot,double heading,double arc,double pitch) {
   cy_scanner_heading(robot,heading);cy_scanner_arc(robot,arc);cy_scanner_pitch(robot,pitch);
 }
+static int dodge_ticks=0,dodges=0;
 static void turn(cy_robot *robot) {
   cy_vec3 position={0},gravity={0};cy_contact target={0};cy_cue cue={0};cy_scan last={0};
   cy_me_position(robot,&position);cy_arena_gravity(robot,&gravity);cy_scanner_last(robot,&last);
@@ -70,6 +73,7 @@ static void turn(cy_robot *robot) {
     drive(robot,throttle,steer(target.bearing,heading),steer(target.elevation,pitch));
     scan(robot,target.bearing,20,target.elevation);
     double power=0;cy_gun_power_for_flight_time(robot,target.range,1,&power);
+    /* gun.lead is the intercept if the target holds course. */
     cy_solution aim={0};if(cy_gun_lead(robot,&target,power,&aim)!=CY_OK){aim.heading=target.bearing;aim.pitch=target.elevation;}
     cy_gun_aim_heading(robot,aim.heading);cy_gun_aim_pitch(robot,aim.pitch);
     cy_direction now={0};cy_gun_aim_now(robot,&now);double delta=0;cy_angles_angle_diff(aim.heading,now.heading,&delta);
@@ -89,6 +93,17 @@ static void turn(cy_robot *robot) {
     double sweep=0;cy_angles_normalize(last.heading+36,&sweep);
     drive(robot,0.5,0.33,steer(0,pitch));scan(robot,sweep,40,free_flight?((tick/10)%3-1)*35:0);
     cy_status_text(robot,"SEARCH",6);
+  }
+  /* A simple dodge: vary it, or predict the shooter. */
+  cy_contact cues[32];uint32_t count=0;int fired=0;
+  if(cy_sensors_cues(robot,cues,32,&count)==CY_OK)for(uint32_t i=0;i<count;i++)fired|=cues[i].source==CY_SOURCE_MUZZLE;
+  if(dodge_ticks==0&&fired){dodges++;dodge_ticks=10;}
+  if(dodge_ticks>0) {
+    /* Odd dodges go left, even ones right; turn +1 and strafe -1 go left. */
+    int left=dodges%2==1;int32_t control=0;cy_match_control(robot,&control);dodge_ticks--;
+    if(control==CY_CONTROL_FORCES){cy_drive_throttle(robot,0.5);cy_drive_strafe(robot,left?-1:1);}
+    else{cy_drive_throttle(robot,1);cy_drive_turn(robot,left?1:-1);}
+    cy_status_text(robot,left?"dodge:left":"dodge:right",left?10:11);cy_status_value(robot,dodges);
   }
   if(get(robot,cy_battery_charge)<get(robot,cy_battery_capacity)/4)cy_drive_throttle(robot,get(robot,cy_drive_get_throttle)*0.5);
   cy_storm storm={0};double margin=0;
