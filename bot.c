@@ -39,7 +39,7 @@
  *   drive.forces(thrust strafe lift yaw_torque pitch_torque roll_torque brake)
  *   gun.aim(heading pitch) gun.fire(power) scanner.set(heading arc pitch)
  *   scanner.power(on) tracker.configure(smoothing forget_ticks cue_ticks)
- *   status.set(text value) raw.extra(json)
+ *   status.set(text value) debug.log(line) raw.extra(json)
  * Every control argument is optional; a second call keeps what the first
  * set. Absent facts are your language's none. Names are snake_case here;
  * your language cases them its own way. Angles are degrees from the +x
@@ -124,6 +124,8 @@ static void turn(cy_robot *robot) {
     cy_direction now={0};cy_gun_aim_now(robot,&now);double delta=0;cy_angles_angle_diff(aim.heading,now.heading,&delta);
     int32_t can_fire=0;cy_gun_can_fire(robot,power,10,&can_fire);
     if(ready&&fabs(delta)<3&&fabs(aim.pitch-now.pitch)<3&&can_fire){cy_gun_fire(robot);cy_gun_power(robot,power);}
+    /* A line for your trace, which only you see: uncomment to follow the aim.
+    char line[64];int n=snprintf(line,sizeof line,"range %.0f aim off %.1f",target.range,delta);cy_debug_log(robot,line,(uint32_t)n); */
     cy_status_text(robot,ready?"TRACK":"NARROW",ready?5:6);cy_status_value(robot,target.range);
   } else if(lost) {
     /* Lost it: look again where it was last seen, widening the beam, before searching. */
