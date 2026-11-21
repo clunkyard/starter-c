@@ -1,6 +1,13 @@
 # A Clunkyard robot in c
 
-Edit `bot.c`, build, play a local match and inspect its replay. Install [Node 20+ with npm](https://nodejs.org/en/download) and your language's compiler or interpreter.
+Edit `bot.c`, build, play a local match and inspect its replay. With Docker, nothing else is needed:
+
+```sh
+docker run --rm -v "$PWD":/bot ghcr.io/clunkyard/toolchain/c build
+docker run --rm -v "$PWD":/bot ghcr.io/clunkyard/toolchain/c run
+```
+
+To build without Docker, install [Node 24 with npm](https://nodejs.org/en/download) and your language's compiler or interpreter.
 See the [supported platforms and toolchain installers](https://clunkyard.com/sdk/player-kit#supported-platforms).
 
 ```sh
@@ -14,7 +21,7 @@ npx @clunkyard/cli replay
 
 If you use Make, the equivalent commands are `make doctor`, `make`, `make match` and `make replay`. The CLI downloads the local match engine and your language's SDK. Downloads and build output stay in `.clunkyard/`.
 
-This robot builds to WebAssembly (wasm32-wasip1), as the hosted builder does, and runs on the Wasmtime host metered by fuel, which counts the same on every computer. In Season 3 its fuel tier is 1 (rates/s3.json); a local match uses the same fuel budget as Standard. Install wasi-sdk 33 and set WASI_SDK_PATH to it, or provide Clang 22 with wasm-ld and set WASI_SYSROOT to a wasi-sdk 33 sysroot.
+This robot builds to WebAssembly (wasm32-wasip1), as the hosted builder does, and runs on the Wasmtime host metered by fuel, which counts the same on every computer. In Season 3 its fuel tier is 1 (rates/s3.json); a local match uses the same fuel budget as Standard. Install wasi-sdk 34 and set WASI_SDK_PATH to it (its package installs it in /opt/wasi-sdk).
 
 Set "target": "native" in bot.json to build with your C compiler instead. A native build plays Open only: Standard refuses it. Other platforms build natively until their SDK carries the WebAssembly host.
 
@@ -31,10 +38,10 @@ Keep a baseline commit. Repeat several seeds and rulesets; compare contacts, bat
 
 ## Play online
 
-Create or copy a bot at [clunkyard.com](https://clunkyard.com). To work with its private Git repository, install `npm install --global @clunkyard/git`, run `clunkyard-git login` and follow the [private Git guide](https://clunkyard.com/sdk/private-git). Copy your robot files into the private clone, then push to save a revision and start a hosted build.
+Create or copy a bot at [clunkyard.com](https://clunkyard.com). To work on it with Git, run `npx @clunkyard/cli open ROBOT_ID`, which signs in and clones it, and follow the [Git guide](https://clunkyard.com/sdk/private-git). Copy your robot files into the clone, then push to save a revision and start a hosted build.
 
-You can also create your own GitHub repository from this template, connect it in My bots and select the repository/ref for build-on-push. [WebDAV](https://clunkyard.com/manual#local-development) is available for desktop editors. Save browser changes before syncing; resolve any source conflict before publishing.
+You can also create your own GitHub repository from this template, connect it in My bots and select the repository/ref for build-on-push. Save browser changes before syncing; resolve any source conflict before publishing.
 
-For a remote Open robot, use Node 22+, copy the connection environment settings from your bot's Connections panel and run `npx @clunkyard/cli connect` here. The CLI builds this project and starts its SDK-aware runner without passing the hub key to robot or build subprocesses. A separate strategist uses `connect --strategist COMMAND`; see the [connection guide](https://clunkyard.com/sdk/player-kit#connect-code-running-on-your-computer).
+For a remote Open robot, copy the connection environment settings from your bot's Connections panel and run `npx @clunkyard/cli connect` here. The CLI builds this project and starts its SDK-aware runner without passing the hub key to robot or build subprocesses. A separate strategist uses `connect --strategist COMMAND`; see the [connection guide](https://clunkyard.com/sdk/player-kit#connect-code-running-on-your-computer).
 
 [API and adapters](https://clunkyard.com/sdk) · [Local trials](https://clunkyard.com/sdk/local-trials) · [Game manual](https://clunkyard.com/manual)
